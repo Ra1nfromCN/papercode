@@ -10,12 +10,10 @@ def process_dataset(file_path):
     # 读取数据集文件 delimiter表示用什么隔开，默认是空格
     data = np.loadtxt(file_path, delimiter=',')
     # 随机打乱数据集
-    # np.random.shuffle(data)
-
+    np.random.shuffle(data)
     # 将数据集分为特征和标签
     features = data[:, :-1]
     labels = data[:, -1]
-
 
     return features, labels
 
@@ -99,6 +97,8 @@ def standardscaler(R):
 
 
 
+
+
 # 上面的为下面的主要算法服务
 # *******************************************************************************************************************************
 # *******************************************************************************************************************************
@@ -132,11 +132,11 @@ def Partitioning(k,Rc,c,R,f): # R是保存最终结果的集合(set)  c是一维
         if(notEmpty_array(Rc)):
             Partitioning(k,Rc,find_farthest_sample(c,Rc,f),R,f)
 
-def Selectioning(k,R,f):# k是簇的数量，R是算法1抽样得到的,以二维数组的形式出现，f是features，也是二维数组
-    R = np.array(list(R)) # 把R从集合转换为二维数组
+def Selectioning(k,R,f):  #  k是簇的数量，R是算法1抽样得到的,以二维数组的形式出现，f是features，也是二维数组
+    R = np.array(list(R))  # 把R从集合转换为二维数组
     U = np.empty((len(R)*(k**k),k+1))
     count = 0
-    for a in range(0,len(R)): # 每一组都要用
+    for a in range(0,len(R)):  # 每一组都要用
         # 这个循环是代表要做这么多次
         for b in range(0, k ** k):
             code = [-1] * len(f)
@@ -158,16 +158,16 @@ def Selectioning(k,R,f):# k是簇的数量，R是算法1抽样得到的,以二�
                 H[t] = flag  # 捕获最小的ht的索引 即得到聚类中心
             # 这里开始计算花费 此时我们有的是H数组，前三格存放的是三个聚类中心的索引，第四格是待定的，用来保存后面算出来的代价
             # 我想要做的是 我想统计聚类的结果 并且输出准确率
-            cluster = [-1] * len(f) #  用来保存聚类的结果
+            cluster = [-1] * len(f)  # 用来保存聚类的结果
             spend = [-1] * k
             min = 9999
             total = 0
-            for i in range(0,len(f)):
+            for i in range(0,len(f)):  # 求每一个样本，在这次循环中属于哪个聚类中心
                 for t in range(0,k):
                     if H[t] == i:
-                        cluster[i] = i
+                        cluster[i] = i  # 聚类中心肯定是属于自己那一类的
                     else:
-                        d = calculate_distance(f, H[t], i)
+                        d = calculate_distance(f, H[t], i)  # 计算欧氏距离
                         if d < min:
                             min = d
                             cluster[i] = H[t]
@@ -175,31 +175,58 @@ def Selectioning(k,R,f):# k是簇的数量，R是算法1抽样得到的,以二�
                 total += min  # 计算总消费
                 min = 9999
             H[-1] = total
-            # 这时候就获得了一组H了，包含聚类中心，最后一个是这种聚类方法的消费
+            # 这时候就获得了一组H了，包含聚类中心，H的末尾是这种聚类方法的连接花费
             U[count] = H
             count += 1
     return U
 
 
-
-
-
 features, labels = process_dataset("C:\\Users\\Celes\\Desktop\\iris\\data.txt")
-features = standardscaler(features)
+features = standardscaler(features)  # 对数据进行标准化处理
 f = features
-c = create_c(len(features))  # c是索引
+c = create_c(len(f))  # c是索引
 Re = set() # Re一开始是空的
 k = 3
-e = 1
+e = 0.5
 R = Sampling(c,e,Re,k,f)
 U = Selectioning(k,R,f)
 
-# 找出最小值
+# 找出最小值 即最终选出的facilities，以及它的connection function
 min = 9999
 flag = -1
+
+print(U)
 for i in range(0,len(U)):
     if U[i][-1] < min:
         min = U[i][-1]
         flag = i
+print("******************")
 
-print(U[flag])
+KEY = U[flag]  # KEY代表聚类中心和花费
+tmp = -1
+cluster = [-1] * len(f)  # cluster用来保存聚类结果
+count = [0] * k
+for i in range(0, len(f)):
+    min = 9999
+    for t in range(0, k):
+        tmp = int(KEY[t])
+        if tmp == i:
+            cluster[i] = i  # 聚类中心肯定是属于自己那一类的
+
+        else:
+            d = calculate_distance(f, tmp, i)  # 计算欧氏距离
+            if d < min:
+                min = d
+                cluster[i] = tmp
+print(KEY)
+print(len(cluster))
+for i in cluster:
+    print(i)
+    if i == int(KEY[0]):
+        count[0] += 1
+    elif i == int(KEY[1]):
+        count[1] += 1
+    elif i == int(KEY[2]):
+        count[2] += 1
+
+print(count)
